@@ -1,5 +1,7 @@
 Require String. Open Scope string_scope.
 
+(*<------------------------------------------------------------------------->*)
+
 Ltac move_to_top x :=
   match reverse goal with
   | H : _ |- _ => try move x after H
@@ -24,3 +26,5 @@ Tactic Notation "SSSSCase" constr(name) := Case_aux SSSSCase name.
 Tactic Notation "SSSSSCase" constr(name) := Case_aux SSSSSCase name.
 Tactic Notation "SSSSSSCase" constr(name) := Case_aux SSSSSSCase name.
 Tactic Notation "SSSSSSSCase" constr(name) := Case_aux SSSSSSSCase name.
+
+(*<------------------------------------------------------------------------->*)

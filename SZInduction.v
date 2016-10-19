@@ -2,101 +2,39 @@ Add LoadPath "/home/sami/Programming/langs/coq/".
 Require Export Basics.
 Require Export SZUtility.
 
-(*------------------------------------------*)
+(*<------------------------------------------------------------------------->*)
 
-Theorem orb_true : forall (b c : bool),
-  b = true -> (orb b c) = true.
+Theorem plus_n_O : forall n:nat, n = n + 0.
 Proof.
-  intros.
-  rewrite -> H.
-  destruct c.
-    reflexivity.
+  intros n.
+  induction n as [| n' IHn'].
+  - reflexivity.
+  - simpl.
+    rewrite <- IHn'.
     reflexivity.
 Qed.
 
-Theorem orb_false : forall (b c : bool),
-  b = false -> (orb b c) = c.
+Theorem minus_diag : forall n,
+  minus n n = 0.
 Proof.
-  intros.
-  rewrite -> H.
-  destruct c.
-    reflexivity.
+  intros n.
+  induction n as [| n' IHn'].
+  - reflexivity.
+  - simpl.
+    rewrite -> IHn'.
     reflexivity.
 Qed.
 
-Lemma andb_a_true : forall (a b : bool),
-  a = true ->
- (andb a b) = b.
-Proof.
-  intros a b H.
-  rewrite -> H.
-  destruct b.
-    reflexivity.
-    reflexivity.
-Qed.
-
-Theorem andb_a_false : forall (a b : bool),
-  a = false ->
-  (andb a b) = a.
-Proof.
-  intros.
-  rewrite -> H.
-  destruct b.
-    reflexivity.
-    reflexivity.
-Qed.
-
-(*------------------------------------------*)
-
-Theorem andb_b_false: forall b c : bool,
-  c = false ->
-  andb b c = false.
-Proof.
-  intros.
-  destruct b.
-    rewrite -> H.
-    reflexivity.
-    rewrite -> H.
-    reflexivity.
-Qed.
-
-Theorem andb_true_elim1 : forall b c : bool,
-  andb b c = true -> b = true.
-Proof.
-  intros b c H.
-  destruct b.
-  Case "b = true".
-    reflexivity.
-  Case "b = false".
-    rewrite <- H.
-    reflexivity.
-Qed.
-
-Theorem andb_true_elim2 : forall b c : bool,
-  andb b c = true -> c = true.
-Proof.
-  intros b c H.
-  destruct c.
-  Case "b = true".
-    rewrite <- H.
-    reflexivity.
-  Case "b = false".
-    rewrite <- H.
-    rewrite -> andb_b_false.
-    reflexivity.
-    reflexivity.
-Qed.
+(*<------------------------------------------------------------------------->*)
 
 Theorem mult_0_r : forall n:nat,
   n * 0 = 0.
 Proof.
   intros.
   induction n as [| n'].
-  Case "n = 0".
-    simpl.
+  - simpl.
     reflexivity.
-  Case "n = S n'".
-    simpl.
+  - simpl.
     rewrite -> IHn'.
     reflexivity.
 Qed.
@@ -105,14 +43,13 @@ Theorem plus_0_r : forall n:nat, n + 0 = n.
 Proof.
   intros n.
   induction n as [| n'].
-  Case "n = 0".
-    reflexivity.
-  Case "n = S n'". simpl.
+  - reflexivity.
+  - simpl.
     rewrite -> IHn'.
     reflexivity.
 Qed.
 
-Theorem plus_n_Sm : forall n m : nat, 
+Theorem plus_n_Sm : forall n m : nat,
   S (n + m) = n + (S m).
 Proof.
   intros.
@@ -175,7 +112,7 @@ Proof.
     reflexivity.
 Qed.
 
-Theorem plus_swap : forall n m p : nat, 
+Theorem plus_swap : forall n m p : nat,
   n + (m + p) = m + (n + p).
 Proof.
   intros n m p.
@@ -194,6 +131,20 @@ Proof.
       rewrite -> plus_comm.
       reflexivity.
   rewrite -> H1.
+  reflexivity.
+Qed.
+
+Theorem plus_swap2 : forall n m p : nat,
+  n + (m + p) = m + (n + p).
+Proof.
+  intros n m p.
+  rewrite -> plus_comm.
+  assert (n + p = p + n) as H.
+    Case "Proof of assertion".
+      rewrite -> plus_comm.
+      reflexivity.
+  rewrite -> H.
+  rewrite -> plus_assoc.
   reflexivity.
 Qed.
 
@@ -225,7 +176,7 @@ Proof.
     simpl.
     rewrite <- IHn'.
     rewrite <- mult_m_Sn.
-    reflexivity.       
+    reflexivity.
 Qed.
 
 Theorem evenb_n__oddb_Sn : forall n : nat,
@@ -243,6 +194,8 @@ Proof.
     rewrite -> negb_involutive.
     reflexivity.
 Qed.
+
+(*<------------------------------------------------------------------------->*)
 
 Theorem ble_nat_refl : forall n:nat,
   true = ble_nat n n.
@@ -277,7 +230,7 @@ Proof.
     reflexivity.
 Qed.
 
-Theorem plus_ble_compat_l : forall n m p : nat, 
+Theorem plus_ble_compat_l : forall n m p : nat,
   ble_nat n m = true -> ble_nat (p + n) (p + m) = true.
 Proof.
   intros.
@@ -357,5 +310,95 @@ Proof.
     simpl.
     rewrite -> IHn'.
     rewrite -> mult_plus_distr_r.
+    reflexivity.
+Qed.
+
+Theorem beq_nat_refl : forall n : nat,
+  true = beq_nat n n.
+Proof.
+  intros.
+  induction n as [| n'].
+  Case "n = 0".
+    reflexivity.
+  Case "n = Sn'".
+    simpl.
+    rewrite <- IHn'.
+    reflexivity.
+Qed.
+
+
+Theorem plus_swap' : forall n m p : nat,
+  n + (m + p) = m + (n + p).
+Proof.
+  intros.
+  replace (n + p) with (p + n).
+  rewrite -> plus_comm.
+  rewrite -> plus_assoc.
+  reflexivity.
+  rewrite -> plus_comm.
+  reflexivity.
+Qed.
+
+(*<------------------------------------------------------------------------->*)
+
+Inductive bin : Type :=
+  | BO :  bin
+  | BT :  bin -> bin
+  | BST : bin -> bin.
+
+Fixpoint bin_incr (a : bin) : bin :=
+  match a with
+  | BO    => BST a
+  | BT b  => BST b
+  | BST c => BT (bin_incr c)
+  end.
+
+Fixpoint bin_to_nat (a : bin) : nat :=
+  match a with
+  | BO    => O
+  | BT b  => 2 * (bin_to_nat b)
+  | BST c => 1 + 2 * (bin_to_nat c)
+  end.
+
+Theorem bin_to_nat_pres_incr : forall n : bin,
+  bin_to_nat (bin_incr n) = S (bin_to_nat n).
+Proof.
+  intros n.
+  induction n.
+  Case "n = BO".
+    reflexivity.
+  Case "n = BT b".
+    reflexivity.
+  Case "n = BST c".
+    simpl.
+    rewrite -> IHn.
+    rewrite <- plus_n_O.
+    rewrite <- plus_n_O.
+    assert (forall x: nat, S(x) + S(x) = S(S(x + x))) as H.
+      intros x.
+      simpl.
+      rewrite <- plus_n_Sm.
+      reflexivity.
+    rewrite -> H.
+    reflexivity.
+Qed.
+
+Fixpoint nat_to_bin(n : nat) : bin :=
+  match n with
+  | O    => BO
+  | S n' => bin_incr (nat_to_bin n')
+  end.
+
+Theorem nat_bin_nat : forall n : nat,
+  n = bin_to_nat (nat_to_bin n).
+Proof.
+  intros n.
+  induction n.
+  Case "n = 0".
+    reflexivity.
+  Case "n = S n'".
+    simpl.
+    rewrite -> bin_to_nat_pres_incr.
+    rewrite <- IHn.
     reflexivity.
 Qed.
