@@ -305,26 +305,6 @@ Proof. reflexivity. Qed.
 Example test_rev2: rev nil = nil.
 Proof. reflexivity. Qed.
 
-Theorem rev_length_firsttry : forall l : natlist,
-  length (rev l) = length l.
-Proof.
-  intros l.
-  induction l as [| n l' IHl'].
-  - (* l =  *)
-    reflexivity.
-  - (* l = n :: l' *)
-    (* This is the tricky case.  Let's begin as usual
-       by simplifying. *)
-    simpl.
-    (* Now we seem to be stuck: the goal is an equality
-       involving ++, but we don't have any useful equations
-       in either the immediate context or in the global
-       environment!  We can make a little progress by using
-       the IH to rewrite the goal... *)
-    rewrite <- IHl'.
-    (* ... but now we can't go any further. *)
-Abort.
-
 Theorem app_length : forall l1 l2 : natlist,
   length (l1 ++ l2) = (length l1) + (length l2).
 Proof.
@@ -364,6 +344,26 @@ Proof.
     reflexivity.
 Qed.
 
+Lemma app_cons_comm : forall (n : nat) (l : natlist),
+  n :: l = [n] ++ l.
+Proof.
+  intros.
+  induction l as [| n' l'].
+  - reflexivity.
+  - reflexivity.
+Qed.
+
+Lemma rev_cons : forall (n : nat) (l : natlist),
+  rev (l ++ [n]) = n :: rev l.
+Proof.
+  intros.
+  induction l as [| m k IHk].
+  - reflexivity.
+  - simpl.
+    rewrite ->IHk.
+    reflexivity.
+Qed.
+
 Theorem rev_involutive : forall l : natlist,
   rev (rev l) = l.
 Proof.
@@ -371,11 +371,10 @@ Proof.
   induction l as [| n l' IHl'].
   - reflexivity.
   - simpl.
-    assert ((rev l') ++ [n] = n :: l').
-    induction l' as [| n' l'' IHl''].
-    + reflexivity.
-    simpl.
-Admitted.
+    rewrite -> rev_cons.
+    rewrite -> IHl'.
+    reflexivity.
+Qed.
 
 Theorem app_assoc4 : forall l1 l2 l3 l4 : natlist,
   l1 ++ (l2 ++ (l3 ++ l4)) = ((l1 ++ l2) ++ l3) ++ l4.
@@ -394,7 +393,10 @@ Proof.
   - reflexivity.
   - simpl.
     rewrite ->IHl1'.
-Admitted.
+    induction n as [| n'].
+    + reflexivity.
+    + reflexivity.
+Qed.
 
 Fixpoint beq_natlist (l1 l2 : natlist) : bool :=
   match (l1, l2) with
@@ -445,4 +447,43 @@ Proof.
   destruct s as [| n s' IHs'].
   - reflexivity.
   - reflexivity.
+Qed.
+
+Theorem ble_n_Sn : forall n,
+  leb n (S n) = true.
+Proof.
+  intros n.
+  induction n as [| n' IHn'].
+  - simpl.
+    reflexivity.
+  - (* S n' *)
+    simpl.
+    rewrite -> IHn'.
+    reflexivity.
+Qed.
+
+Theorem remove_decreases_count: forall (s : bag),
+  leb (count 0 (remove_one 0 s)) (count 0 s) = true.
+Proof.
+  intros s.
+  induction s as [| n s' IHs'].
+  - reflexivity.
+  - simpl.
+    destruct n as [| n' IHn'].
+    + simpl.
+      rewrite -> ble_n_Sn.
+      reflexivity.
+    + simpl.
+      rewrite -> IHs'.
+      reflexivity.
+Qed.
+
+Theorem bag_count_sum : forall (n : nat) (s1 s2 : bag),
+  leb ((count n s1) + (count n s2)) (count n (sum s1 s2)) = true.
+Proof.
+  intros.
+  induction s1 as [| h1 t1].
+  - simpl.
+    destruct s2 as [| h2 t2].
+    reflexivity.
 Qed.
