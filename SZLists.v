@@ -1,6 +1,6 @@
 Add LoadPath "/home/sami/Programming/langs/coq/".
-Require Export Basics.
-Require Export SZUtility.
+Require Export Induction.
+Module NatList.
 
 (*<------------------------------------------------------------------------->*)
 
@@ -291,5 +291,158 @@ Proof.
   - (* l1 = nil *)
     reflexivity.
   - (* l1 = cons n l1' *)
-    simpl. rewrite → IHl1'. reflexivity.
+    simpl. rewrite -> IHl1'. reflexivity.
+Qed.
+
+Fixpoint rev (l:natlist) : natlist :=
+  match l with
+  | nil => nil
+  | h :: t => rev t ++ [h]
+  end.
+
+Example test_rev1: rev [1;2;3] = [3;2;1].
+Proof. reflexivity. Qed.
+Example test_rev2: rev nil = nil.
+Proof. reflexivity. Qed.
+
+Theorem rev_length_firsttry : forall l : natlist,
+  length (rev l) = length l.
+Proof.
+  intros l.
+  induction l as [| n l' IHl'].
+  - (* l =  *)
+    reflexivity.
+  - (* l = n :: l' *)
+    (* This is the tricky case.  Let's begin as usual
+       by simplifying. *)
+    simpl.
+    (* Now we seem to be stuck: the goal is an equality
+       involving ++, but we don't have any useful equations
+       in either the immediate context or in the global
+       environment!  We can make a little progress by using
+       the IH to rewrite the goal... *)
+    rewrite <- IHl'.
+    (* ... but now we can't go any further. *)
+Abort.
+
+Theorem app_length : forall l1 l2 : natlist,
+  length (l1 ++ l2) = (length l1) + (length l2).
+Proof.
+  intros l1 l2.
+  induction l1 as [| n l1' IHl1'].
+  - (* l1 = nil *)
+    reflexivity.
+  - (* l1 = cons *)
+    simpl.
+    rewrite -> IHl1'.
+    reflexivity.
+Qed.
+
+Theorem rev_length : forall l : natlist,
+  length (rev l) = length l.
+Proof.
+  intros l.
+  induction l as [| n l' IHl'].
+  - (* l = nil *)
+    reflexivity.
+  - (* l = cons *)
+    simpl.
+    rewrite -> app_length.
+    rewrite -> plus_comm.
+    rewrite -> IHl'.
+    reflexivity.
+Qed.
+
+Theorem app_nil_r : forall l : natlist,
+  l ++ [] = l.
+Proof.
+  intros.
+  induction l as [| n l' IHl'].
+  - reflexivity.
+  - simpl.
+    rewrite -> IHl'.
+    reflexivity.
+Qed.
+
+Theorem rev_involutive : forall l : natlist,
+  rev (rev l) = l.
+Proof.
+  intros.
+  induction l as [| n l' IHl'].
+  - reflexivity.
+  - simpl.
+    assert ((rev l') ++ [n] = n :: l').
+    induction l' as [| n' l'' IHl''].
+    + reflexivity.
+    simpl.
+Admitted.
+
+Theorem app_assoc4 : forall l1 l2 l3 l4 : natlist,
+  l1 ++ (l2 ++ (l3 ++ l4)) = ((l1 ++ l2) ++ l3) ++ l4.
+Proof.
+  intros.
+  rewrite <- app_assoc.
+  rewrite <- app_assoc.
+  reflexivity.
+Qed.
+
+Lemma nonzeros_app : forall l1 l2 : natlist,
+  nonzeros (l1 ++ l2) = (nonzeros l1) ++ (nonzeros l2).
+Proof.
+  intros.
+  induction l1 as [| n l1' IHl1'].
+  - reflexivity.
+  - simpl.
+    rewrite ->IHl1'.
+Admitted.
+
+Fixpoint beq_natlist (l1 l2 : natlist) : bool :=
+  match (l1, l2) with
+  | (nil, nil)       => true
+  | (nil, m :: u)    => false
+  | (n :: t, nil)    => false
+  | (n :: t, m :: u) => (beq_nat n m) && (beq_natlist t u)
+  end.
+
+Example test_beq_natlist1 :
+  (beq_natlist nil nil = true).
+Proof. reflexivity. Qed.
+
+Example test_beq_natlist2 :
+  beq_natlist [1;2;3] [1;2;3] = true.
+Proof. reflexivity. Qed.
+
+Example test_beq_natlist3 :
+  beq_natlist [1;2;3] [1;2;4] = false.
+Proof. reflexivity. Qed.
+
+Theorem beq_natlist_refl : forall l : natlist,
+  true = beq_natlist l l.
+Proof.
+  intros.
+  induction l as [| n l' IHl'].
+  { reflexivity. }
+  { 
+    simpl.
+    assert (beq_nat n n = true) as H.
+    induction n as [| n' IHn'].
+    { reflexivity. }
+    {
+      simpl.
+      rewrite -> IHn'.
+      reflexivity.
+    }
+    rewrite -> H.
+    rewrite <- IHl'.
+    reflexivity.
+  }
+Qed.
+
+Theorem count_member_nonzero : forall (s : bag),
+  leb 1 (count 1 (1 :: s)) = true.
+Proof.
+  intros.
+  destruct s as [| n s' IHs'].
+  - reflexivity.
+  - reflexivity.
 Qed.
