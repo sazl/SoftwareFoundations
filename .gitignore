@@ -1,3 +1,4 @@
 *
 !.gitignore
-!SZ*
+!SZ*.v
+!Poly.v

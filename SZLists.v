@@ -260,10 +260,36 @@ Definition blt_nat (n m : nat) : bool :=
   | false => leb n m
   end.
 
-Theorem bag_theorem : forall (b : bag) (v : nat),
-  (count v b) < (count v (add v b)).
+Lemma leb_n_Sm : forall n : nat,
+  leb n (S n) = true.
 Proof.
-Admitted.
+  intros.
+  induction n as [| m].
+  - reflexivity.
+  - simpl.
+    rewrite -> IHm.
+    reflexivity.  
+Qed.
+
+Theorem bag_theorem : forall (b : bag) (v : nat),
+  leb (count v b) (count v (add v b)) = true.
+Proof.
+  intros.
+  induction b as [| n b' IHb'].
+  - reflexivity.
+  - destruct v as [| u].
+    + destruct n as [| m].
+      * simpl.
+        rewrite -> leb_n_Sm.
+        reflexivity.
+      * simpl.
+        rewrite -> leb_n_Sm.
+        reflexivity.
+    + simpl.
+      rewrite <- beq_nat_refl.
+      rewrite -> leb_n_Sm.
+      reflexivity.
+Qed.
 
 (*<------------------------------------------------------------------------->*)
 
@@ -478,12 +504,161 @@ Proof.
       reflexivity.
 Qed.
 
+Lemma leb_nat_refl : forall n : nat,
+  leb n n = true.
+Proof.
+  intros.
+  induction n as [| m].
+  - reflexivity.
+  - simpl.
+    rewrite -> IHm.
+    reflexivity.
+Qed.
+
+Lemma count_n_nil : forall (n : nat),
+  count n [] = 0.
+Proof.
+  intros.
+  reflexivity.
+Qed.
+
+Lemma sum_nil_H : forall (v : bag),
+  sum [] v = v.
+Proof.
+  intros.
+  reflexivity.
+Qed.
+
+Lemma sum_H_nil : forall (v : bag),
+  sum v [] = v.
+Proof.
+  intros.
+  induction v as [| h1 t1].
+  - reflexivity.
+  - simpl.
+    reflexivity.
+Qed.
+
 Theorem bag_count_sum : forall (n : nat) (s1 s2 : bag),
   leb ((count n s1) + (count n s2)) (count n (sum s1 s2)) = true.
 Proof.
   intros.
   induction s1 as [| h1 t1].
+  - destruct s2 as [| h2 t2].
+    + reflexivity.
+    + rewrite -> count_n_nil.
+      rewrite -> plus_O_n.
+      rewrite -> sum_nil_H.
+      rewrite -> leb_nat_refl.
+      reflexivity.
+  - destruct s2 as [| h2 t2].
+    + rewrite -> sum_H_nil.
+      rewrite -> count_n_nil.
+      rewrite <- plus_n_O.
+      rewrite -> leb_nat_refl.
+      reflexivity.
+    + rewrite <- IHt1.
+      simpl.
+Qed.
+
+Theorem rev_injective : forall (l1 l2 : natlist),
+  rev l1 = rev l2 -> l1 = l2.
+Proof.
+  intros.
+  rewrite <- rev_involutive.
+  rewrite <- H.
+  rewrite -> rev_involutive.
+  reflexivity.
+Qed.
+
+(*<------------------------------------------------------------------------->*)
+
+Inductive natoption : Type :=
+  | Some : nat -> natoption
+  | None : natoption.
+
+Definition option_elim (d : nat) (o : natoption) : nat :=
+  match o with
+  | Some n' => n'
+  | None    => d
+  end.
+
+Definition hd_error (l : natlist) : natoption :=
+  match l with
+  | []      => None
+  | x :: xs => Some x
+  end.
+
+Example test_hd_error1 : hd_error [] = None.
+Proof. reflexivity. Qed.
+
+Example test_hd_error2 : hd_error [1] = Some 1.
+Proof. reflexivity. Qed.
+
+Example test_hd_error3 : hd_error [5;6] = Some 5.
+Proof. reflexivity. Qed.
+
+Theorem option_elim_hd : forall (l:natlist) (default:nat),
+  hd default l = option_elim default (hd_error l).
+Proof.
+  intros.
+  destruct l as [| n kl].
+  - reflexivity.
+  - reflexivity.
+Qed.
+
+(*<------------------------------------------------------------------------->*)
+
+Inductive id : Type :=
+  | Id : nat -> id.
+
+Definition beq_id x1 x2 :=
+  match x1, x2 with
+  | Id n1, Id n2 => beq_nat n1 n2
+  end.
+
+Theorem beq_id_refl : forall (x : id),
+  true = beq_id x x.
+Proof.
+  intros.
+  destruct x.
   - simpl.
-    destruct s2 as [| h2 t2].
+    rewrite <- beq_nat_refl.
     reflexivity.
 Qed.
+
+Inductive partial_map : Type :=
+  | empty : partial_map
+  | record : id -> nat -> partial_map -> partial_map.
+
+Definition update (d : partial_map)
+                  (key : id) (value : nat)
+                  : partial_map :=
+  record key value d.
+
+Fixpoint find (key : id) (d : partial_map) : natoption :=
+  match d with
+  | empty         => None
+  | record k v d' => if beq_id key k
+                     then Some v
+                     else find key d'
+  end.
+
+Theorem update_eq : forall (d : partial_map) (k : id) (v: nat),
+  find k (update d k v) = Some v.
+Proof.
+  intros.
+  simpl.
+  rewrite <- beq_id_refl.
+  reflexivity.
+Qed.
+
+Theorem update_neq : forall (d : partial_map) (m n : id) (o: nat),
+  beq_id m n = false -> find m (update d n o) = find m d.
+Proof.
+  intros.
+  simpl.
+  rewrite -> H.
+  reflexivity.
+Qed.
+
